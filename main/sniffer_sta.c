@@ -2,6 +2,7 @@
 #include "nvs_flash.h"
 #include "sta.h"
 #include "csi.h"
+#include "icmp.h"
 
 static const char* TAG = "main";
 void app_main(void)
@@ -14,4 +15,6 @@ void app_main(void)
     csi_init();
     xTaskCreate(serial_print_csi_task, "serial_print_csi", 4096, NULL, 1, NULL);
 
+    init_ping();
+    esp_ping_start(ping_session);
 }

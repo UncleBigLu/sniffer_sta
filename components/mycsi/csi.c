@@ -40,7 +40,7 @@ void serial_print_csi_task() {
         // Get csi from queue
         wifi_csi_info_t *data = NULL;
         xQueueReceive(csi_queue, &data, portMAX_DELAY);
-        printf("csi_length: %d", data->len);
+        printf("csi_length: %d\n", data->len);
         free(data);
     }
 }
