@@ -17,4 +17,6 @@ void app_main(void)
 
     init_ping();
     esp_ping_start(ping_session);
+
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
 }

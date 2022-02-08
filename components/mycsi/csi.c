@@ -41,6 +41,7 @@ void serial_print_csi_task() {
         wifi_csi_info_t *data = NULL;
         xQueueReceive(csi_queue, &data, portMAX_DELAY);
         printf("csi_length: %d\n", data->len);
+        printf("Source MAC addr: %u\n", data->mac[1]);
         free(data);
     }
 }
