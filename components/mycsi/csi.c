@@ -11,7 +11,7 @@ void csi_init() {
     csicfg.lltf_en = true;
     csicfg.htltf_en = true;
     csicfg.stbc_htltf2_en = true;
-    // Enable to generate htlft data by averaging lltf and ht_ltf data when receiving HT packet.
+    // Enable to generate htltf data by averaging lltf and ht_ltf data when receiving HT packet.
     // Otherwise, use ht_ltf data directly. Default enabled
     csicfg.ltf_merge_en = true;
     //enable to turn on channel filter to smooth adjacent sub-carrier.
@@ -41,7 +41,52 @@ void serial_print_csi_task() {
         wifi_csi_info_t *data = NULL;
         xQueueReceive(csi_queue, &data, portMAX_DELAY);
         printf("csi_length: %d\n", data->len);
-        printf("Source MAC addr: %u\n", data->mac[1]);
+
+        printf("Source Mac addr: ");
+        for(int i = 0; i < 5; ++i) {
+            printf("%X:", data->mac[i]);
+        }
+        printf("%X\n", data->mac[5]);
+
+        printf("Secondary channel: ");
+        switch (data->rx_ctrl.secondary_channel) {
+            case 0:
+                printf("none\n");
+                break;
+            case 1:
+                printf("above\n");
+                break;
+            case 2:
+                printf("below\n");
+                break;
+            default:
+                printf("Error on secondary channel info\n");
+                break;
+        }
+
+        printf("sig_mode: ");
+        switch (data->rx_ctrl.sig_mode) {
+            case 0:
+                printf("non HT(11bg)\n");
+                break;
+            case 1:
+                printf("HT(11n)\n");
+                break;
+            case 2:
+                printf("VHT(11ac)\n");
+                break;
+            default:
+                printf("Error about sig_mode info\n");
+                break;
+        }
+
+        printf("stbc: ");
+        if (data->rx_ctrl.stbc) {
+            printf("true\n");
+        } else {
+            printf("false\n");
+        }
+        
         free(data);
     }
 }
