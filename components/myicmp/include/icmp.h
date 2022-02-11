@@ -7,6 +7,7 @@
 #define SNIFFER_STA_ICMP_H
 
 #define PING_TARGET_ADDR 0x0104A8C0 // 192.168.4.1
+#define PING_INTERVAL_MS 20
 
 esp_ping_handle_t ping_session;
 

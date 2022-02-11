@@ -8,6 +8,7 @@ void csi_init();
 static void csi_callback(void* ctx, wifi_csi_info_t* data);
 
 void serial_print_csi_task();
+void serial_raw_csi_data_task();
 
 //Help functions to get csi data
 /*

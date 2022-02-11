@@ -1,5 +1,6 @@
 #include "csi.h"
 #include <string.h>
+#include <complex.h>
 
 static const char* TAG = "mycsi";
 
@@ -16,7 +17,7 @@ void csi_init() {
     csicfg.ltf_merge_en = true;
     //enable to turn on channel filter to smooth adjacent sub-carrier.
     // Disable it to keep independence of adjacent sub-carrier. Default enabled
-    csicfg.channel_filter_en = true;
+    csicfg.channel_filter_en = false;
     // Maybe should be enabled to oberve csi amplitude change.....? To be tested.
     csicfg.manu_scale = false;
 
@@ -35,6 +36,24 @@ void csi_callback(void* ctx, wifi_csi_info_t* data) {
     memcpy(data_cp, data, sizeof(*data));
     // Post data to queue
     xQueueSendToBack(csi_queue, &data_cp, 0);
+}
+
+void serial_raw_csi_data_task() {
+    uint8_t start_subc_index = 0;
+    while (1) {
+        // Get csi from queue
+        wifi_csi_info_t *data = NULL;
+        xQueueReceive(csi_queue, &data, portMAX_DELAY);
+
+        start_subc_index = data->first_word_invalid ? 4 : 0;
+
+        int8_t *buf_ptr = data->buf;
+        printf("csi_data: ");
+        for(uint16_t i = start_subc_index; i*2 + 1 < data->len; ++i) {
+            printf("%d %d ", buf_ptr[i*2], buf_ptr[i*2 + 1]);
+        }
+        printf("\n");
+    }
 }
 
 void serial_print_csi_task() {
@@ -111,6 +130,9 @@ void serial_print_csi_task() {
         int8_t img, real;
         (*csi_func_ptr[sec_channel][sig_mode][cbw][stbc])(data, 2, &img, &real);
         printf("img: %d, real: %d\n", img, real);
+
+        double complex csi = real + img*I;
+        printf("phase angle: %f\n", carg(csi));
 
         free(data);
     }

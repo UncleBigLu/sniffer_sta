@@ -1,6 +1,8 @@
 #include "icmp.h"
 #include <arpa/inet.h>
 
+static uint8_t ping_fail_cnt = 0;
+
 void init_ping() {
     ip_addr_t target_addr;
     target_addr.type = 0; // IPV4. No docs found about it, use example icmp tested this member should be zero in IPV4.
@@ -9,6 +11,7 @@ void init_ping() {
     esp_ping_config_t ping_config = ESP_PING_DEFAULT_CONFIG();
     ping_config.target_addr = target_addr;
     ping_config.count = ESP_PING_COUNT_INFINITE;
+    ping_config.interval_ms = PING_INTERVAL_MS;
 
     esp_ping_callbacks_t cbs;
     cbs.on_ping_success = on_ping_success;
@@ -19,17 +22,17 @@ void init_ping() {
     esp_ping_new_session(&ping_config, &cbs, &ping_session);
 }
 void on_ping_success(esp_ping_handle_t hdl, void *args) {
-    uint8_t ttl;
-    uint16_t seqno;
-    uint32_t elapsed_time, recv_len;
-    ip_addr_t target_addr;
-    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_TTL, &ttl, sizeof(ttl));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
-    printf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\n",
-           recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
+//    uint8_t ttl;
+//    uint16_t seqno;
+//    uint32_t elapsed_time, recv_len;
+//    ip_addr_t target_addr;
+//    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
+//    esp_ping_get_profile(hdl, ESP_PING_PROF_TTL, &ttl, sizeof(ttl));
+//    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
+//    esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
+//    esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
+//    printf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\n",
+//           recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
 }
 
 void on_ping_timeout(esp_ping_handle_t hdl, void *args) {
@@ -38,6 +41,12 @@ void on_ping_timeout(esp_ping_handle_t hdl, void *args) {
     esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
     printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
+
+    if(++ping_fail_cnt >= 2) {
+        ping_fail_cnt = 0;
+        esp_ping_stop(ping_session);
+        esp_ping_start(ping_session);
+    }
 }
 void on_ping_end(esp_ping_handle_t hdl, void *args) {
     uint32_t transmitted;

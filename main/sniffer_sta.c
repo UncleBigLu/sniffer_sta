@@ -13,8 +13,8 @@ void app_main(void)
     wifi_init_sta();
 
     csi_init();
-    xTaskCreate(serial_print_csi_task, "serial_print_csi", 4096, NULL, 1, NULL);
-
+    //xTaskCreate(serial_print_csi_task, "serial_print_csi", 4096, NULL, 1, NULL);
+    xTaskCreate(serial_raw_csi_data_task, "serial_raw_csi_data_print", 4096, NULL, 1, NULL);
     init_ping();
     esp_ping_start(ping_session);
 
