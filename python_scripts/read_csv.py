@@ -10,7 +10,7 @@ re_legalCSI = re.compile(r'^csi_data: (-*\d+ )+$')
 
 
 
-with open('../csi_data/csi_idle_1.csv', 'r') as f:
+with open('../csi_data/csi_chaos_2.csv', 'r') as f:
     lines = f.readlines()
     csi_num = len(lines)
     # 64 subcarriers * csi_num array
@@ -54,8 +54,22 @@ for i in range(0, 64):
 
 x = np.arange(csi_num)
 for i in range(2, 20):
-    plt.plot(x, filterd_phase[i], label = "subcarrier "+str(i))
+    plt.plot(x, filterd_amplitude[i], label = "subcarrier "+str(i))
 
+# Calculate covariance between subcarriers
+# In this test we calculate cov of lltf subcarriers 2~20
+amp_cov = np.zeros(18)
+amp_avg = np.zeros(18)
+
+for i in range(2, 20):
+    amp_avg[i - 2] = sum(filterd_amplitude[i]) / csi_num
+for i in range(0, 17):
+    for j in range(0, csi_num):
+        amp_cov[i] += (filterd_amplitude[i+2][j] - amp_avg[i])*(filterd_amplitude[i+3][j] - amp_avg[i+1])/csi_num
+for j in range(0, csi_num):
+    amp_cov[17] += (filterd_amplitude[19][j] - amp_avg[17])*(filterd_amplitude[2][j] - amp_avg[0])/csi_num
+
+print(amp_cov)
 
 plt.legend()
 plt.show()
