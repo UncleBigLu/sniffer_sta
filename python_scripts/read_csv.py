@@ -5,12 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-re_legalCSI = re.compile(r'^csi_data: (-*\d+ )+$')
-
-
-
-
-with open('../csi_data/csi_chaos_2.csv', 'r') as f:
+with open('../csi_data/origin_data/csi_idle_1.csv', 'r') as f:
     lines = f.readlines()
     csi_num = len(lines)
     # 64 subcarriers * csi_num array
@@ -19,23 +14,19 @@ with open('../csi_data/csi_chaos_2.csv', 'r') as f:
 
     valid_csi_num = 0
     for line in lines:
-        if(re_legalCSI.match(line)):
-            l = line.strip('\n')
-            l = l.strip('csi_data: ')
-            csi_str = l.split(' ')
-            # Observed some csi only contains 120 data, discard them
-            if(len(csi_str) < 128):
-                continue
-            # 64 subcarriers of lltf
-            i = 0
-            while(i < 128):
-                amp = sqrt(int(csi_str[i])**2 + int(csi_str[i+1])**2)
-                # atan2(img, real)
-                pha = atan2(int(csi_str[i]), int(csi_str[i+1]))
-                subc_amplitude[int(i/2)][valid_csi_num] = amp
-                subc_phase[int(i/2)][valid_csi_num] = pha
-                i = i+2
-            valid_csi_num = valid_csi_num + 1
+        l = line.strip('\n')
+        l = l.strip('csi_data: ')
+        csi_str = l.split(' ')
+        # 64 subcarriers of lltf
+        i = 0
+        while(i < 128):
+            amp = sqrt(int(csi_str[i])**2 + int(csi_str[i+1])**2)
+            # atan2(img, real)
+            pha = atan2(int(csi_str[i]), int(csi_str[i+1]))
+            subc_amplitude[int(i/2)][valid_csi_num] = amp
+            subc_phase[int(i/2)][valid_csi_num] = pha
+            i = i+2
+        valid_csi_num = valid_csi_num + 1
 
 # csi_index = int(input("Please input csi index"))
 #
