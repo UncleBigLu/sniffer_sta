@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-with open('../csi_data/origin_data/csi_idle_1.csv', 'r') as f:
+with open('../csi_data/corrected_data/csi_walk1.csv', 'r') as f:
     lines = f.readlines()
     csi_num = len(lines)
     # 64 subcarriers * csi_num array
@@ -43,10 +43,17 @@ for i in range(0, 64):
     filterd_amplitude[i] = gaussian_filter(subc_amplitude[i], sigma=5)
     filterd_phase[i] = gaussian_filter(subc_phase[i], sigma=5)
 
-x = np.arange(csi_num)
-for i in range(2, 20):
-    plt.plot(x, filterd_amplitude[i], label = "subcarrier "+str(i))
+# Plot LLTF CSI
+fig, axs = plt.subplots(3)
+fig.suptitle('LLTF subcarrier CSI amp')
 
+x = np.arange(csi_num)
+for i in range(2, 28):
+    axs[0].plot(x, filterd_amplitude[i], label = "subcarrier "+str(i))
+for i in range(29, 55):
+    axs[1].plot(x, filterd_amplitude[i], label="subcarrier " + str(i))
+for i in range(62, 64):
+    axs[2].plot(x, filterd_amplitude[i], label="subcarrier " + str(i))
 # Calculate covariance between subcarriers
 # In this test we calculate cov of lltf subcarriers 2~20
 amp_cov = np.zeros(18)
@@ -62,7 +69,7 @@ for j in range(0, csi_num):
 
 print(amp_cov)
 
-plt.legend()
+axs[0].legend()
 plt.show()
 
 # for i in range(0, 64):
