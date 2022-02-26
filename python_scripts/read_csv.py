@@ -1,11 +1,13 @@
-import re
 from math import sqrt
 from math import atan2
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
+import sys
 
-with open('../csi_data/corrected_data/csi_walk1.csv', 'r') as f:
+
+filename = str(sys.argv[1])
+with open(filename, 'r') as f:
     lines = f.readlines()
     csi_num = len(lines)
     # 64 subcarriers * csi_num array
