@@ -5,4 +5,4 @@ sdkconfig.old
 csi_data
 python_scripts/venv
 python_scripts/plotTest.py
-
+__pycache__
