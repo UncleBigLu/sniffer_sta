@@ -5,7 +5,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 import sys
 from myLOF import lof
-
+import myMath
 
 filename = str(sys.argv[1])
 with open(filename, 'r') as f:
@@ -69,9 +69,17 @@ for i in range(0, 64):
     filterd_amplitude[i] = gaussian_filter(subc_amplitude[i], sigma=5)
     filterd_phase[i] = gaussian_filter(subc_phase[i], sigma=5)
 
+
+# Calculate amplitude standard deviation
+filterd_std = np.empty((64, csi_num))
+subc_std = np.empty((64, csi_num))
+for i in range(0, 64):
+    filterd_std[i] = myMath.subc_amp_std(filterd_amplitude[i])
+    subc_std[i] = myMath.subc_amp_std(subc_amplitude[i])
+
 # Plot LLTF CSI
 fig, axs = plt.subplots(2)
-fig.suptitle('LLTF subcarrier CSI amp')
+fig.suptitle('LLTF subcarrier CSI standard deviation')
 
 # base_amp = filterd_amplitude[2:28].T
 # cov_amp = np.cov(base_amp)[50]
@@ -81,8 +89,10 @@ fig.suptitle('LLTF subcarrier CSI amp')
 # plt.show()
 x = np.arange(csi_num)
 for i in range(2, 28):
-    axs[0].plot(x, filterd_amplitude[i])
-    axs[1].plot(x, filterd_phase[i])
+    # axs[0].plot(x, subc_amplitude[i])
+    axs[0].plot(x, subc_std[i])
+    # axs[1].plot(x, filterd_amplitude[i])
+    axs[1].plot(x, filterd_std[i])
 # for i in range(29, 55):
 #     axs[1].plot(x, filterd_amplitude[i], label="subcarrier " + str(i))
 # for i in range(62, 64):
