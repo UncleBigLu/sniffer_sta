@@ -125,14 +125,14 @@ void serial_print_csi_task() {
             cbw = 0;
         }
 
-        // Call get csi function from function pointer array
-        // Get csi from seconde subcarrier of HTLTF
-        int8_t img, real;
-        (*csi_func_ptr[sec_channel][sig_mode][cbw][stbc])(data, 2, &img, &real);
-        printf("img: %d, real: %d\n", img, real);
-
-        double complex csi = real + img*I;
-        printf("phase angle: %f\n", carg(csi));
+//        // Call get csi function from function pointer array
+//        // Get csi from seconde subcarrier of HTLTF
+//        int8_t img, real;
+//        (*csi_func_ptr[sec_channel][sig_mode][cbw][stbc])(data, 2, &img, &real);
+//        printf("img: %d, real: %d\n", img, real);
+//
+//        double complex csi = real + img*I;
+//        printf("phase angle: %f\n", carg(csi));
 
         free(data);
     }
