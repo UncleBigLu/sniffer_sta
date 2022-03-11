@@ -19,7 +19,9 @@ int init_sock() {
 }
 
 void waiting_start_csi_task() {
-    int sock = init_sock();
+    int sock = 0;
+waitStart:
+    sock = init_sock();
 
     char rx_buffer[10];
 
@@ -32,22 +34,29 @@ void waiting_start_csi_task() {
     int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if (err < 0) {
         ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+        goto closeSoc;
     }
     ESP_LOGI(TAG, "Socket bound, port %d", PORT);
 
-    while (1) {
-        struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
-        socklen_t socklen = sizeof(source_addr);
-        int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
-        if (len < 0) {
-            ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-            break;
-        }
-        rx_buffer[len] = '\0';
-        if(strcmp(rx_buffer, "start") == 0) {
-            printf("start CSI\n");
-            break;
-        }
+  
+    struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
+    socklen_t socklen = sizeof(source_addr);
+    int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
+    if (len < 0) {
+        ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
+        goto closeSoc;
     }
+    rx_buffer[len] = '\0';
+    if(strcmp(rx_buffer, "start") == 0) {
+        printf("start CSI\n");
+    }
+    
     vTaskDelete(NULL);
+    return;
+    
+closeSoc:
+    ESP_LOGE(TAG, "Shutting down socket and restarting...");
+    shutdown(sock, 0);
+    close(sock);
+    goto waitStart;
 }
