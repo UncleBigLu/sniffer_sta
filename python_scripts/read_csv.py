@@ -54,27 +54,6 @@ def read_csv(filename):
             valid_csi_num = valid_csi_num + 1
     return subc_amplitude, subc_phase
 
-def remove_outlier(subc, threshold=20):
-    csi_num = len(subc[2])
-    for subc_index in range(2, 28):
-        k_dis_arr = lof(subc[subc_index])
-        for i in range(0, csi_num):
-            if(k_dis_arr[i] > threshold):
-                j = i
-                k = i
-                while(k_dis_arr[j] > threshold and k_dis_arr[k] > threshold):
-                    if(j != 0):
-                        j -= 1
-                    if(k != csi_num-1):
-                        k += 1
-                    if(j == 0 and k == csi_num - 1):
-                        break
-                if(k_dis_arr[j] <= threshold):
-                    subc[subc_index][i] = subc[subc_index][j]
-                elif(k_dis_arr[k] <= threshold):
-                    subc[subc_index][i] = subc[subc_index][j]
-                else:
-                    print("K Neighbor error at i:"+str(i))
 
 def read_and_filter(filename):
     subc_amplitude, subc_phase = read_csv(filename)
