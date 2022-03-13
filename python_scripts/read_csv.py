@@ -1,12 +1,33 @@
 from math import sqrt
 from math import atan2
 import matplotlib.pyplot as plt
+import numpy
 import numpy as np
 from scipy.ndimage import gaussian_filter
 import sys
 from myLOF import lof
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
+
+
+
+def hampel_filter(subc, window_size = 25):
+    i = 0
+    while(i < len(subc) - window_size + 1):
+        mdn = np.median(subc[i:i+window_size])
+        mad_arr = np.copy(subc[i:i+window_size])
+        for j in range(0, len(mad_arr)):
+            mad_arr[j] = abs(mad_arr[j]-mdn)
+        mad = np.median(mad_arr)
+        for k in range(i, i+window_size):
+            if(abs(subc[k] - mdn) > 3*1.4826*mad):
+                subc[k] = mdn
+        i += window_size
+    if i < len(subc):
+        for k in range(i, len(subc)):
+            if(abs(subc[k] - mdn > 3*1.4826*mad)):
+                subc[k] = mdn
+
 
 
 def read_csv(filename):
@@ -58,7 +79,10 @@ def remove_outlier(subc, threshold=20):
 def read_and_filter(filename):
     subc_amplitude, subc_phase = read_csv(filename)
     csi_num = len(subc_amplitude[0])
-    remove_outlier(subc_amplitude)
+    # remove_outlier(subc_amplitude)
+    for subc_index in range(0, 64):
+        hampel_filter(subc_amplitude[subc_index])
+
     # Apply gaussian filter
     filterd_amplitude = np.empty((64, csi_num))
     for i in range(0, 64):
@@ -101,23 +125,23 @@ if __name__ == '__main__':
 
     for i in range(2, 7):
         #distance, path = fastdtw(subc_walk1[i], subc_walk2[i], dist=euclidean)
-        distance, path = fastdtw(subc_idle1[i], subc_walk2[i], dist=euclidean)
-        distance_list.append(distance)
+        distance, path = fastdtw(subc_idle1[i], subc_idle2[i], dist=euclidean)
+        distance_list.append(distance/len(path))
         path_list.append(path)
     print(distance_list)
 
 
-    x = np.arange(len(subc_idle1[2]))
-    y = np.arange(len(subc_idle2[2]))
-    j = np.arange(len(subc_walk1[2]))
-    k = np.arange(len(subc_walk2[2]))
-
-    for i in range(2, 7):
-        axs[0].plot(j, subc_walk1[i])
-        axs[1].plot(k, subc_walk2[i])
-        # axs[2].plot(y, dtw_arr[i-2])
-
-    plt.show()
+    # x = np.arange(len(subc_idle1[2]))
+    # y = np.arange(len(subc_idle2[2]))
+    # j = np.arange(len(subc_walk1[2]))
+    # k = np.arange(len(subc_walk2[2]))
+    #
+    # for i in range(2, 7):
+    #     axs[0].plot(j, subc_walk1[i])
+    #     axs[1].plot(k, subc_walk2[i])
+    #     # axs[2].plot(y, dtw_arr[i-2])
+    #
+    # plt.show()
 
     # dtw_arr = np.zeros((5, len(subc_list[3][2])))
     # print(dtw_arr.shape)
