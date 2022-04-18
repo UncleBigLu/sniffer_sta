@@ -45,7 +45,7 @@ void serial_raw_csi_data_task() {
         wifi_csi_info_t *data = NULL;
         xQueueReceive(csi_queue, &data, portMAX_DELAY);
 
-        start_subc_index = data->first_word_invalid ? 4 : 0;
+        start_subc_index = data->first_word_invalid ? 2 : 0;
 
         int8_t *buf_ptr = data->buf;
         printf("csi_data: ");
