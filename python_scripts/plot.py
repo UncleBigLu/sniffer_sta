@@ -54,7 +54,7 @@ def calc_subc_variance(subcs, start_datapoint, end_datapoint, start_subc=2, end_
 
 def sort_subc_sensitivity(var_list_idle, var_list_move, start_subc=2, end_subc=55):
     # weight_move*var_move + weight_idle*(1-var_idle)
-    weight_move = 0.7
+    weight_move = 0.5
     weight_idle = 1-weight_move
     weight_list = []
     for i in range(start_subc, end_subc):
@@ -62,12 +62,12 @@ def sort_subc_sensitivity(var_list_idle, var_list_move, start_subc=2, end_subc=5
     return weight_list
 
 
-def plot_subc_sensitivity(weight_list):
+def plot_subc_sensitivity(weight_list, start_subc=2, end_subc=62):
     plt.style.use('_mpl-gallery')
     fig, ax = plt.subplots()
-    x = np.arange(len(weight_list))+6
+    x = np.arange(len(weight_list))+start_subc+2
     ax.bar(x, weight_list, width=1, edgecolor='white', linewidth=0.7)
-    ax.set(xlim=(0, 59), xticks=np.arange(1, 59))
+    # ax.set(xlim=(start_subc, end_subc), xticks=np.arange(start_subc, end_subc))
 
     plt.show()
 
@@ -105,4 +105,14 @@ if __name__ == '__main__':
     #
     #         axs[i*2+1].set_title(sys.argv[i+1][27:])
     # plt.show()
-        plot_all_subc(filterd_csi_list[i], 62, 188)
+        var_list_idle = calc_subc_variance(filterd_csi_list[i], 0, 300, 62, 187)
+        var_list_move = calc_subc_variance(filterd_csi_list[i], 600, 1000, 62, 187)
+        weight_list = sort_subc_sensitivity(var_list_idle, var_list_move, 62,187)
+        if(i == 0):
+            for j in range(0, len(weight_list)):
+                weight_avg.append(weight_list[j]/file_num)
+        else:
+            for j in range(0, len(weight_list)):
+                weight_avg[j] += weight_list[j]/file_num
+    plot_subc_sensitivity(weight_avg, 62, 186)
+
