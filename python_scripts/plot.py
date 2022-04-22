@@ -13,8 +13,8 @@ def plot_all_subc(subcs, start_subc=0, end_subc=64):
 
     cnt = 0
     for subc_index in range(start_subc, end_subc):
-        axs[int(cnt/8), cnt%8].plot(x, subcs[subc_index])
-        axs[int(cnt/8), cnt%8].set_title('Subcarrier '+ str(subc_index+2))
+        axs[int(cnt%8), int(cnt/8)].plot(x, subcs[subc_index])
+        axs[int(cnt%8), int(cnt/8)].set_title('Subcarrier '+ str(subc_index+2))
         cnt += 1
     plt.show()
 
@@ -105,4 +105,4 @@ if __name__ == '__main__':
     #
     #         axs[i*2+1].set_title(sys.argv[i+1][27:])
     # plt.show()
-        plot_all_subc()
+        plot_all_subc(filterd_csi_list[i], 62, 188)
