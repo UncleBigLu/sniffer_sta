@@ -14,7 +14,7 @@ def plot_all_subc(subcs, start_subc=0, end_subc=64):
     cnt = 0
     for subc_index in range(start_subc, end_subc):
         axs[int(cnt/8), cnt%8].plot(x, subcs[subc_index])
-        axs[int(cnt/8), cnt%8].set_title('Subcarrier '+ str(subc_index))
+        axs[int(cnt/8), cnt%8].set_title('Subcarrier '+ str(subc_index+2))
         cnt += 1
     plt.show()
 
@@ -23,7 +23,6 @@ def plot_subc_one_ax(subcs, start_subc=2, end_subc=55):
     fig, axs = plt.subplots()
     x = np.arange(len(subcs[start_subc]))
     for i in range(start_subc, end_subc):
-        print(i)
         axs.plot(x, subcs[i])
     plt.show()
 
@@ -46,6 +45,32 @@ def calc_subc_distance(subcs, interval=1, start_subc=2, end_subc=55):
     return np.average(subc_distance_list)
 
 
+def calc_subc_variance(subcs, start_datapoint, end_datapoint, start_subc=2, end_subc=55):
+    variance_list=[]
+    for i in range(start_subc, end_subc):
+        variance_list.append(np.var(subcs[i][start_datapoint:end_datapoint]))
+    return variance_list
+
+
+def sort_subc_sensitivity(var_list_idle, var_list_move, start_subc=2, end_subc=55):
+    # weight_move*var_move + weight_idle*(1-var_idle)
+    weight_move = 0.7
+    weight_idle = 1-weight_move
+    weight_list = []
+    for i in range(start_subc, end_subc):
+        weight_list.append(weight_move*var_list_move[i-start_subc]+weight_idle*(1-var_list_idle[i-start_subc]))
+    return weight_list
+
+
+def plot_subc_sensitivity(weight_list):
+    plt.style.use('_mpl-gallery')
+    fig, ax = plt.subplots()
+    x = np.arange(len(weight_list))+6
+    ax.bar(x, weight_list, width=1, edgecolor='white', linewidth=0.7)
+    ax.set(xlim=(0, 59), xticks=np.arange(1, 59))
+
+    plt.show()
+
 if __name__ == '__main__':
     file_num = len(sys.argv) - 1
     csi_list = []
@@ -57,7 +82,7 @@ if __name__ == '__main__':
 
     # fig, axs = plt.subplots(2*file_num)
     # fig.suptitle('LLTF AMP')
-
+    weight_avg = []
     for i in range(0, file_num):
     #     for subc_index in range(2, 3):
     #         x = np.arange(len(csi_list[i][2]))
@@ -80,14 +105,4 @@ if __name__ == '__main__':
     #
     #         axs[i*2+1].set_title(sys.argv[i+1][27:])
     # plt.show()
-        similarity_list = []
-        for subc_itv in range(1, 40):
-            similarity_list.append(calc_subc_distance(filterd_csi_list[i], subc_itv))
-        x = np.arange(1, 40)
-        fig, ax = plt.subplots()
-        ax.set_xlabel('subcarrier interval')
-        ax.set_ylabel('subcarrier distance')
-        ax.plot(x, similarity_list)
-        fig.suptitle('subcarrier_similarity')
-        plt.show()
-    
+        plot_all_subc()
