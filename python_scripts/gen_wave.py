@@ -17,7 +17,7 @@ def write_amp(tag, subcs, seq):
     index_list = [45, 57, 98, 118]
     with open('../csi_data/amp/'+str(tag)+'/'+str(seq)+'.csv', 'w') as f:
         for subc_index in index_list:
-            amp = subcs[subc_index]
+            amp = subcs[subc_index-4]
             for i in range(len(amp)):
                 f.write(str(amp[i]))
                 if(i != len(amp)-1):
@@ -26,16 +26,16 @@ def write_amp(tag, subcs, seq):
 
 
 def add_noise(subcs, max_noise = 2):
-    index_list = [45, 54, 98, 118]
-    subcs_cp = list.copy(subcs)
+    index_list = [45, 57, 98, 118]
+    subcs_cp = np.copy(subcs)
     for subc_index in index_list:
-        for i in range(len(subcs_cp[subc_index])):
+        for i in range(len(subcs_cp[subc_index-4])):
             noise = (random.random()-0.5)*2*max_noise
-            subcs_cp[subc_index][i] += noise
+            subcs_cp[subc_index-4][i] += noise
     return subcs_cp
 
 
-if __name__ == '__main__':
+def _write_amp():
     tag = sys.argv[1]
     src_file = sys.argv[2]
     start_seq = int(sys.argv[3])
@@ -43,6 +43,10 @@ if __name__ == '__main__':
 
     subcs_amplitude, filtered_amplitude = read_and_filter(src_file, gaussian_sigma=8)
     for seq in range(start_seq, end_seq):
-        write_amp(tag, filtered_amplitude, seq)
+        rand_amp = add_noise(filtered_amplitude)
+        write_amp(tag, rand_amp, seq)
+
+if __name__ == '__main__':
+    _write_amp()
 
 
