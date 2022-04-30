@@ -10,23 +10,23 @@ from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 
 
-
-def hampel_filter(subc, window_size = 25):
+def hampel_filter(subc, window_size=25):
     i = 0
-    while(i < len(subc) - window_size + 1):
-        mdn = np.median(subc[i:i+window_size])
-        mad_arr = np.copy(subc[i:i+window_size])
+    while i < len(subc) - window_size + 1:
+        mdn = np.median(subc[i:i + window_size])
+        mad_arr = np.copy(subc[i:i + window_size])
         for j in range(0, len(mad_arr)):
-            mad_arr[j] = abs(mad_arr[j]-mdn)
+            mad_arr[j] = abs(mad_arr[j] - mdn)
         mad = np.median(mad_arr)
-        for k in range(i, i+window_size):
-            if(abs(subc[k] - mdn) > 3*1.4826*mad):
+        for k in range(i, i + window_size):
+            if abs(subc[k] - mdn) > 3 * 1.4826 * mad:
                 subc[k] = mdn
         i += window_size
     if i < len(subc):
         for k in range(i, len(subc)):
-            if(abs(subc[k] - mdn > 3*1.4826*mad)):
+            if abs(subc[k] - mdn > 3 * 1.4826 * mad):
                 subc[k] = mdn
+
 
 def cnt_data_len(filename):
     with open(filename, 'r') as f:
@@ -39,7 +39,7 @@ def cnt_data_len(filename):
             l = l.strip('csi_data: ')
             csi_str = l.split(' ')
             subc_num = len(csi_str)
-            if(subc_num not in d):
+            if subc_num not in d:
                 d[subc_num] = 1
             else:
                 d[subc_num] += 1
@@ -49,7 +49,14 @@ def cnt_data_len(filename):
         fig, ax = plt.subplots()
         x = list(d.keys())
         y = list(d.values())
+        x = np.array(x)+0.5
         ax.bar(x, y, width=1, edgecolor='white', linewidth=0.7)
+        ax.set(xlim=(371, 377), xticks = np.arange(372, 379))
+        ax.tick_params(axis='both', which='major', labelsize=18)
+        ax.tick_params(axis='both', which='minor', labelsize=18)
+        ax.set_xlabel('CSI data length', fontsize=22)
+        ax.set_ylabel('CSI data num', fontsize=22)
+
 
         plt.show()
 
@@ -66,10 +73,10 @@ def read_csv_all_data(filename):
             l = l.strip('csi_data: ')
             csi_str = l.split(' ')
             # delete data which length less than 376
-            if(len(csi_str) < 376):
+            if len(csi_str) < 376:
                 continue
             i = 0
-            while (i < 376):
+            while i < 376:
                 amp = sqrt(int(csi_str[i]) ** 2 + int(csi_str[i + 1]) ** 2)
                 subc_amplitude[int(i / 2)][valid_csi_num] = amp
                 i = i + 2
@@ -118,4 +125,4 @@ def read_and_filter(filename, gaussian_sigma=5):
 
 if __name__ == '__main__':
     filename = str(sys.argv[1])
-
+    cnt_data_len(filename)
