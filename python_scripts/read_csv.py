@@ -45,7 +45,7 @@ def cnt_data_len(filename):
                 d[subc_num] += 1
         print(d)
         print(csi_num)
-        plt.style.use('_mpl-gallery')
+        plt.style.use('ggplot')
         fig, ax = plt.subplots()
         x = list(d.keys())
         y = list(d.values())

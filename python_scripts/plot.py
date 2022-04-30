@@ -48,6 +48,25 @@ def calc_subc_distance(subcs, interval=1, start_subc=2, end_subc=55):
     return np.average(subc_distance_list)
 
 
+def plot_subc_distance(filename):
+    amp, filterd_amp = read_and_filter(filename)
+    dis_list = []
+    for interval in range(1, 40):
+        dis_list.append(calc_subc_distance(filterd_amp, interval))
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots()
+    x = np.arange(len(dis_list))+1
+    ax.plot(x, dis_list)
+
+    ax.set_xlabel('subcarrier interval', fontsize=22)
+    ax.set_ylabel('subcarrier distance', fontsize=22)
+    ax.set(xticks=np.arange(0, 40, 5))
+    ax.tick_params(axis='both', which='major', labelsize=22)
+    ax.tick_params(axis='both', which='minor', labelsize=22)
+
+    plt.show()
+
+
 def calc_subc_variance(subcs, start_datapoint, end_datapoint, start_subc=2, end_subc=55):
     variance_list=[]
     for i in range(start_subc, end_subc):
@@ -167,5 +186,5 @@ if __name__ == '__main__':
     # ori, filtered_amp = read_and_filter(sys.argv[1], 8)
     #
     # plot_spec_subc(filtered_amp, 0, 1000, 45,57,98,118)
-    plot_amp()
+    plot_subc_distance(sys.argv[1])
 
