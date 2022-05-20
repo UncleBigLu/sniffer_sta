@@ -76,15 +76,33 @@ if __name__ == '__main__':
 
     # Calculate distances
     # distanceList:[[MAX_SUBC1-4][MAD_SUBC1-4][VAR_SUBC1-4]]
-    calc_distance(test_act, train_data_list, max, 0, distance_list)
-    calc_distance(test_act, train_data_list, median_abs_deviation, 1, distance_list)
-    calc_distance(test_act, train_data_list, variance, 2, distance_list)
+    for test_subcs in test_act.actList:
+        test_act_per_file = Action(test_act.label)
+        test_act_per_file.actList.append(test_subcs)
+        calc_distance(test_act_per_file, train_data_list, max, 0, distance_list)
+        calc_distance(test_act_per_file, train_data_list, median_abs_deviation, 1, distance_list)
+        calc_distance(test_act_per_file, train_data_list, variance, 2, distance_list)
 
-    for dis in distance_list:
-        dis.sort()
-    for dimension in distance_list:
-        for dis in dimension[:3]:
-            print(dis.label)
-
-
-
+        for dis in distance_list:
+            dis.sort()
+        label_cnt = {}
+        for dimension in distance_list:
+            for dis in dimension[:3]:
+                # print(dis.label)
+                if dis.label not in label_cnt:
+                    label_cnt[dis.label] = 1
+                else:
+                    label_cnt[dis.label] += 1
+        max_cnt = 0
+        max_label = ''
+        for label in label_cnt:
+            if label_cnt[label] > max_cnt:
+                max_cnt = label_cnt[label]
+                max_label = label
+        if max_label == test_label:
+            correct_test_num += 1
+        else:
+            print(max_label)
+    print(correct_test_num)
+    print(total_test_num)
+    print(correct_test_num / total_test_num)
