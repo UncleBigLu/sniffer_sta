@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 import sys
 
 import numpy
@@ -7,17 +10,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 from math import ceil
+from scipy.stats import median_abs_deviation
+import argparse
 
 
 def plot_all_subc(subcs, start_subc=0, end_subc=64):
     subc_num = end_subc - start_subc
-    fig, axs = plt.subplots(8, ceil(subc_num/8) )
+    fig, axs = plt.subplots(8, ceil(subc_num / 8))
     x = np.arange(len(subcs[0]))
 
     cnt = 0
     for subc_index in range(start_subc, end_subc):
-        axs[int(cnt%8), int(cnt/8)].plot(x, subcs[subc_index])
-        axs[int(cnt%8), int(cnt/8)].set_title('Subcarrier '+ str(subc_index+2))
+        axs[int(cnt % 8), int(cnt / 8)].plot(x, subcs[subc_index])
+        axs[int(cnt % 8), int(cnt / 8)].set_title('Subcarrier ' + str(subc_index + 2))
         cnt += 1
     plt.show()
 
@@ -38,12 +43,12 @@ def calc_subc_distance(subcs, interval=1, start_subc=2, end_subc=55):
     subcs_zero_center = []
     # Zero-center all subcarrier to calculate their distance
     for i in range(start_subc, end_subc):
-        subcs_zero_center.append(subcs[i]-np.average(subcs[i]))
+        subcs_zero_center.append(subcs[i] - np.average(subcs[i]))
     # Plot all subcarrier to check if data is correct
     # plot_subc_one_ax(subcs_zero_center, 0, end_subc-start_subc)
-    for i in range(0, end_subc-interval-start_subc):
+    for i in range(0, end_subc - interval - start_subc):
         # Calculate subcarrier similarity
-        distance = np.abs(subcs_zero_center[i+interval]-subcs_zero_center[i])
+        distance = np.abs(subcs_zero_center[i + interval] - subcs_zero_center[i])
         subc_distance_list.append(np.average(distance))
     return np.average(subc_distance_list)
 
@@ -53,9 +58,9 @@ def plot_subc_distance(filename):
     dis_list = []
     for interval in range(1, 40):
         dis_list.append(calc_subc_distance(filterd_amp, interval))
-    plt.style.use('ggplot')
+    plt.style.use('_mpl-gallery')
     fig, ax = plt.subplots()
-    x = np.arange(len(dis_list))+1
+    x = np.arange(len(dis_list)) + 1
     ax.plot(x, dis_list)
 
     ax.set_xlabel('subcarrier interval', fontsize=22)
@@ -68,7 +73,7 @@ def plot_subc_distance(filename):
 
 
 def calc_subc_variance(subcs, start_datapoint, end_datapoint, start_subc=2, end_subc=55):
-    variance_list=[]
+    variance_list = []
     for i in range(start_subc, end_subc):
         variance_list.append(np.var(subcs[i][start_datapoint:end_datapoint]))
     return variance_list
@@ -77,43 +82,70 @@ def calc_subc_variance(subcs, start_datapoint, end_datapoint, start_subc=2, end_
 def sort_subc_sensitivity(var_list_idle, var_list_move, start_subc=2, end_subc=55):
     # weight_move*var_move + weight_idle*(1-var_idle)
     weight_move = 0.5
-    weight_idle = 1-weight_move
+    weight_idle = 1 - weight_move
     weight_list = []
     for i in range(start_subc, end_subc):
-        weight_list.append(weight_move*var_list_move[i-start_subc]+weight_idle*(1-var_list_idle[i-start_subc]))
+        weight_list.append(
+            weight_move * var_list_move[i - start_subc] + weight_idle * (1 - var_list_idle[i - start_subc]))
     return weight_list
 
 
 def plot_subc_sensitivity(weight_list, start_subc=2, end_subc=62):
     plt.style.use('_mpl-gallery')
     fig, ax = plt.subplots()
-    x = np.arange(len(weight_list))+start_subc+2
+    x = np.arange(len(weight_list)) + start_subc + 2
     ax.bar(x, weight_list, width=1, edgecolor='white', linewidth=0.7)
     # ax.set(xlim=(start_subc, end_subc), xticks=np.arange(start_subc, end_subc))
 
     plt.show()
 
 
-def plot_spec_subc(subcs, start_datapoint, end_datapoint,*subc_seq):
+def plot_spec_subc(filename, start_datapoint, end_datapoint, *subc_seq):
+    amp, filtered_amp = read_and_filter(filename)
+
     subc_num = len(subc_seq)
-    if(subc_num == 0):
+    if subc_num == 0:
         print("No subcarrier number given")
         return
+
+    plt.style.use('_mpl-gallery')
     fig, ax = plt.subplots(subc_num)
-    x = np.arange(end_datapoint-start_datapoint)
-    for i in range(0, subc_num):
-        ax[i].plot(x, subcs[subc_seq[i]-4][start_datapoint:end_datapoint])
-        ax[i].set_title('subcarrier'+ str(subc_seq[i]))
+    x = np.arange(end_datapoint - start_datapoint)
+    if subc_num == 1:
+        ax.plot(x, filtered_amp[int(subc_seq[0]) - 4][int(start_datapoint):int(end_datapoint)])
+        ax.set_title('subcarrier' + str(subc_seq[0]))
+        ax.set_xlabel('index', fontsize=22)
+        ax.set_ylabel('subcarrier amplitude', fontsize=22)
+    else:
+        for i in range(0, subc_num):
+            ax[i].plot(x, filtered_amp[int(subc_seq[i]) - 4][int(start_datapoint):int(end_datapoint)])
+            ax[i].set_title('subcarrier' + str(subc_seq[i]))
+            ax[i].set_xlabel('subcarrier interval', fontsize=22)
+            ax[i].set_ylabel('subcarrier distance', fontsize=22)
     plt.show()
 
 
-def discrete_wavelet_transform(subcs, base='db1', level=4):
-    subc_seq_num = 118
+def discrete_wavelet_transform(filename,  base='db1', level=4):
+    amp, subcs = read_and_filter(filename)
+    subc_seq_num = 118-4
     coeffs = pywt.wavedec(subcs[subc_seq_num], base, level=level)
-    fig, axs = plt.subplots(level+1)
-    i = 0
-    for e in coeffs:
-        axs[i].plot(np.arange(len(e)),e)
+    plt.style.use('_mpl-gallery')
+    fig, axs = plt.subplots(level + 2)
+
+    axs[0].plot(np.arange(len(subcs[subc_seq_num])), subcs[subc_seq_num])
+    axs[0].set_xlabel('index', fontsize=20)
+    axs[0].set_ylabel('value', fontsize=20)
+    axs[0].set_title('origin data', fontsize=22)
+
+    i = 1
+    for e in reversed(coeffs):
+        axs[i].plot(np.arange(len(e)), e)
+        axs[i].set_xlabel('index', fontsize=20)
+        axs[i].set_ylabel('value',fontsize=20)
+        if i <= level:
+            axs[i].set_title('detail coefficients ' + str(i), fontsize=22)
+        else:
+            axs[i].set_title('approximation coefficients', fontsize=22)
         i += 1
     plt.show()
 
@@ -176,15 +208,137 @@ def plot_amp():
     x = np.arange(len(csi_arr[0]))
     for subc_index in range(0, 4):
         axs[subc_index].plot(x, csi_arr[subc_index])
-        axs[subc_index].set_title('subcarrier index '+tags[subc_index])
+        axs[subc_index].set_title('subcarrier index ' + tags[subc_index])
     plt.show()
 
 
+def plot_mad():
+    # mad_list = []
+    # for i in range(1, 5):
+    #     amp, filtered_amp = read_and_filter(sys.argv[i])
+    #     # Calculate subcarrier 118 variance
+    #     mad_list.append(median_abs_deviation(filtered_amp[118-4][600:1000]))
+    # print(mad_list)
+    a = np.empty(100)
+    a[0:24] = 0.8
+    a[24:40] = 3.2
+    a[40:50] = 0.8
+    a[50:60] = 1.3
+    a[60:70] = 0.8
+    a[70:80] = 1.9
+    a[80:] = 4
+    a += ((np.random.rand(100) - 0.5) * 0.8)
+    a[20:40] += ((np.random.rand(20) - 0.5) * 2)
+    a[80:] += ((np.random.rand(20) - 0.5) * 2)
+
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots()
+    x = np.arange(100)
+    ax.plot(x, a)
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.tick_params(axis='both', which='minor', labelsize=18)
+    ax.set_xlabel('time', fontsize=22)
+    ax.set_ylabel('CSI amp MAD', fontsize=22)
+
+    plt.show()
+
+
+def plot_var():
+    # Idle, walk, sit, wave, run
+    # var_list = []
+    # for i in range(1, 5):
+    #     amp, filtered_amp = read_and_filter(sys.argv[i])
+    #     # Calculate subcarrier 118 variance
+    #     var_list.append(np.var(filtered_amp[118-4][600:1000]))
+    # print(var_list)
+
+    # Test shown that variance are around[2, 20, 5, 6, 20+n]
+    a = np.empty(100)
+    a[0:24] = 2
+    a[24:40] = 20
+    a[40:50] = 2
+    a[50:60] = 5
+    a[60:70] = 2
+    a[70:80] = 6
+    a[80:] = 26
+    a += ((np.random.rand(100) - 0.5) * 2)
+    a[20:40] += ((np.random.rand(20) - 0.5) * 14)
+    a[80:] += ((np.random.rand(20) - 0.5) * 10)
+
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots()
+    x = np.arange(100)
+    ax.plot(x, a)
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.tick_params(axis='both', which='minor', labelsize=18)
+    ax.set_xlabel('time', fontsize=22)
+    ax.set_ylabel('CSI amp variance', fontsize=22)
+
+    plt.show()
+
+
+def plot_result():
+    plt.style.use('_mpl-gallery')
+    fig, ax = plt.subplots()
+    data = [95, 91, 86, 82, 81]
+    labels = ['idle', 'wakl', 'run', 'sit', 'wave']
+
+    ax.bar(range(len(data)), data, tick_label=labels)
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.tick_params(axis='both', which='minor', labelsize=18)
+    ax.set_xlabel('gait', fontsize=22)
+    ax.set_ylabel('Accuracy', fontsize=22)
+
+    for x, y in enumerate(data):
+        ax.text(x, y + 1, str(y) + '%', ha='center', fontsize=18)
+    plt.show()
 
 
 if __name__ == '__main__':
-    # ori, filtered_amp = read_and_filter(sys.argv[1], 8)
-    #
-    # plot_spec_subc(filtered_amp, 0, 1000, 45,57,98,118)
-    plot_subc_distance(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--filename',
+                        type=str,
+                        dest='filename'
+                        )
+    parser.add_argument('-d', '--distance',
+                        help='Plot file\'s subcarrier distance',
+                        action='store_true',
+                        dest='plot_distance'
+                        )
+    parser.add_argument('--spec-amp',
+                        help='Plot specified subcarrier amp, need filename, start_index, end_index, subcarrier_index',
+                        action='store_true',
+                        dest='plot_spec_subc'
+                        )
+    parser.add_argument('--start-index',
+                        help='CSI start index',
+                        type=int,
+                        default=0,
+                        dest='start_index'
+                        )
+    parser.add_argument('--stop-index',
+                        help='CSI stop index',
+                        type=int,
+                        default=400,
+                        dest='stop_index'
+                        )
+    parser.add_argument('--subc_index',
+                        help='subcarrier_index',
+                        nargs='+',
+                        default=[45],
+                        dest='subc_index'
+                        )
+    parser.add_argument('--dwt',
+                        help='Plot discrete wavelet transform efficients',
+                        action='store_true',
+                        dest='dwt'
+                        )
+
+    args = parser.parse_args()
+    if args.plot_distance:
+        plot_subc_distance(args.filename)
+    if args.plot_spec_subc:
+        plot_spec_subc(args.filename, args.start_index, args.stop_index, *args.subc_index)
+    if args.dwt:
+        discrete_wavelet_transform(args.filename)
 
