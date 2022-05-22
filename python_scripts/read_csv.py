@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from math import sqrt
 from math import atan2
 import matplotlib.pyplot as plt
@@ -8,6 +10,10 @@ import sys
 from myLOF import lof
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
+from os import listdir
+from os.path import isfile, join
+import random
+import argparse
 
 
 def hampel_filter(subc, window_size=25):
@@ -45,18 +51,17 @@ def cnt_data_len(filename):
                 d[subc_num] += 1
         print(d)
         print(csi_num)
-        plt.style.use('ggplot')
+        plt.style.use('_mpl-gallery')
         fig, ax = plt.subplots()
         x = list(d.keys())
         y = list(d.values())
-        x = np.array(x)+0.5
+        x = np.array(x) + 0.5
         ax.bar(x, y, width=1, edgecolor='white', linewidth=0.7)
-        ax.set(xlim=(371, 377), xticks = np.arange(372, 379))
+        ax.set(xlim=(371, 377), xticks=np.arange(372, 379))
         ax.tick_params(axis='both', which='major', labelsize=18)
         ax.tick_params(axis='both', which='minor', labelsize=18)
         ax.set_xlabel('CSI data length', fontsize=22)
         ax.set_ylabel('CSI data num', fontsize=22)
-
 
         plt.show()
 
@@ -109,7 +114,7 @@ def read_csv(filename):
     return subc_amplitude, subc_phase
 
 
-def read_and_filter(filename, gaussian_sigma=5):
+def read_and_filter(filename, gaussian_sigma=8):
     subc_amplitude = read_csv_all_data(filename)
     csi_num = len(subc_amplitude[0])
     # remove_outlier(subc_amplitude)
@@ -123,6 +128,60 @@ def read_and_filter(filename, gaussian_sigma=5):
     return subc_amplitude, filterd_amplitude
 
 
+def scale_point(dir_name, start_seq, scale_base=0):
+    f_names = [join(dir_name, f) for f in listdir(dir_name) if isfile(join(dir_name, f))]
+    for f_name in f_names:
+        with open(f_name, 'r') as f:
+            lines = f.readlines()
+        out_str = 'csi_data: '
+        print(f_name)
+        with open(f_name.rstrip('.csv') + '_' + str(start_seq) + '.csv', 'w') as f:
+            for line in lines:
+                l = line.strip('\n')
+                l = l.strip('csi_data: ')
+                csi_str = l.split(' ')
+                for s_val in csi_str:
+                    i_val = int(s_val)
+                    noise = ((random.random() * 0.4) + 0.8) + scale_base
+                    out_str += str(int(i_val * noise)) + ' '
+
+                f.write(out_str)
+                f.write('\n')
+                out_str = 'csi_data: '
+
+
 if __name__ == '__main__':
-    filename = str(sys.argv[1])
-    cnt_data_len(filename)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--scale-point',
+                        dest='scale_point',
+                        action='store_true',
+                        default=False
+                        )
+    parser.add_argument('-f', '--filename',
+                        type=str,
+                        dest='filename'
+                        )
+    parser.add_argument('-s', '--seq-num',
+                        dest='seq_num',
+                        type=int
+                        )
+    parser.add_argument('-a', '--optional-arg',
+                        dest='opt_arg',
+                        default=0
+                        )
+    parser.add_argument('--raw-data',
+                        help='Plot raw data without any filter',
+                        dest='raw_data',
+                        action='store_true'
+                        )
+
+    args = parser.parse_args()
+
+    if args.scale_point:
+        print(float(args.opt_arg))
+        folder_name = args.filename
+        scale_point(folder_name, args.seq_num, float(args.opt_arg))
+
+
+    # filename = str(sys.argv[1])
+    # cnt_data_len(filename)
