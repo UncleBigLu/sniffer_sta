@@ -5,11 +5,14 @@ from math import atan2
 import matplotlib.pyplot as plt
 import numpy
 import numpy as np
+import pywt
 from scipy.ndimage import gaussian_filter
 import sys
 from myLOF import lof
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
+from scipy.stats import median_abs_deviation
+from statistics import variance
 from os import listdir
 from os.path import isfile, join
 import random
@@ -150,6 +153,61 @@ def scale_point(dir_name, start_seq, scale_base=0):
                 out_str = 'csi_data: '
 
 
+def process_data(fi, fo):
+    raw_amp, flt_amp = read_and_filter(fi)
+    """
+    Output file structure:
+    max45 57 98 118
+    mad45 57 98 118
+    var45 57 98 118
+    dwt_amp45
+    dwt_amp57
+    dwt_amp98
+    dwt_amp118
+    """
+    feature_list = [[] for i in range(3)]
+    subc_index_list = np.array([45, 57, 98, 118]) - 4
+    for index in subc_index_list:
+        feature_list[0].append(max(flt_amp[index]))
+        feature_list[1].append(median_abs_deviation(flt_amp[index]))
+        feature_list[2].append(variance(flt_amp[index]))
+
+    coeffs_list = []
+    for index in subc_index_list:
+        coeffs_list.append(pywt.wavedec(flt_amp[index], 'db1', level=4)[0])
+
+    with open(fo, 'w') as f:
+        for feature in feature_list:
+            for subc_feature in feature:
+                f.write(str(subc_feature))
+                f.write(' ')
+            f.write('\n')
+        for cA in coeffs_list:
+            for val in cA:
+                f.write(str(val))
+                f.write(' ')
+            f.write('\n')
+
+
+def check_processed_data(fi):
+    with open(fi, 'r') as f:
+        lines = f.readlines()
+        cnt = 0
+        fig, ax = plt.subplots()
+        for line in lines:
+            print("Cnt:", cnt)
+            v_list = line.split()
+            if cnt < 3:
+                for v in v_list:
+                    print(v)
+            else:
+                a = np.array([float(v) for v in v_list])
+                x = np.arange(len(a))
+                ax.plot(x, a, label=str(cnt))
+            cnt += 1
+        plt.show()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--scale-point',
@@ -174,6 +232,21 @@ if __name__ == '__main__':
                         dest='raw_data',
                         action='store_true'
                         )
+    parser.add_argument('--of',
+                        help="Output file name",
+                        type=str,
+                        dest='of'
+                        )
+    parser.add_argument('-p', '--process-data',
+                        help='Calculate data feature and write to a new file',
+                        action='store_true',
+                        dest='process_data'
+                        )
+    parser.add_argument('--check',
+                        help='Check procesed data',
+                        action='store_true',
+                        dest='check'
+                        )
 
     args = parser.parse_args()
 
@@ -181,7 +254,9 @@ if __name__ == '__main__':
         print(float(args.opt_arg))
         folder_name = args.filename
         scale_point(folder_name, args.seq_num, float(args.opt_arg))
-
-
+    elif args.process_data:
+        process_data(args.filename, args.of)
+    elif args.check:
+        check_processed_data(args.filename)
     # filename = str(sys.argv[1])
     # cnt_data_len(filename)

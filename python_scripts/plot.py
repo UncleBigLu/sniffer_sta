@@ -115,50 +115,76 @@ def plot_spec_subc(filename, start_datapoint, end_datapoint, raw_data, hampel_on
         print("No subcarrier number given")
         return
 
-    plt.style.use('_mpl-gallery')
-    fig, ax = plt.subplots(subc_num)
+    # plt.style.use('_mpl-gallery')
+    fig, ax = plt.subplots(subc_num, figsize=(6.93, 5.19))
+    # ax.tick_params(axis='both', which='both', bottom=False, top=False, left=False, labelleft=False,
+    #                labelbottom=False)
     x = np.arange(end_datapoint - start_datapoint)
     if subc_num == 1:
-        ax.plot(x, amp[int(subc_seq[0]) - 4][int(start_datapoint):int(end_datapoint)])
+        ax.plot(x, amp[int(subc_seq[0]) - 4][int(start_datapoint):int(end_datapoint)], label='amp')
         ax.set_title('subcarrier' + str(subc_seq[0]))
         ax.set_xlabel('index', fontsize=22)
         ax.set_ylabel('subcarrier amplitude', fontsize=22)
     else:
         for i in range(0, subc_num):
-            ax[i].plot(x, amp[int(subc_seq[i]) - 4][int(start_datapoint):int(end_datapoint)])
+            ax[i].plot(x, amp[int(subc_seq[i]) - 4][int(start_datapoint):int(end_datapoint)], label='amp')
             ax[i].set_title('subcarrier' + str(subc_seq[i]))
             ax[i].set_xlabel('subcarrier interval', fontsize=22)
             ax[i].set_ylabel('subcarrier distance', fontsize=22)
+    ax.legend()
     plt.show()
+    fig.savefig('test.png', format='png')
+    return amp[int(subc_seq[0]) - 4][int(start_datapoint):int(end_datapoint)]
 
 
-def discrete_wavelet_transform(filename,  base='db1', level=4, gaussian_sigma=5, result_only=False):
+def init_plot():
+    fig, ax = fig, ax = plt.subplots(figsize=(6.93, 5.19))
+    ax.tick_params(axis='both', which='both', bottom=False, top=False, left=False, labelleft=False, labelbottom=False)
+    return fig, ax
+
+
+def plot_val(fig, ax, val, label=None):
+    x = np.arange(len(val))
+    ax.plot(x, val, label=label)
+
+
+
+def discrete_wavelet_transform(filename, base='db1', level=4, gaussian_sigma=5, result_only=False):
     amp, subcs = read_and_filter(filename, gaussian_sigma)
-    subc_seq_num = 118-4
-    coeffs = pywt.wavedec(subcs[subc_seq_num], base, level=level)
+    subc_seq_index = 118 - 4
+    coeffs = pywt.wavedec(subcs[subc_seq_index], base, level=level)
     plt.style.use('_mpl-gallery')
     if not result_only:
-        fig, axs = plt.subplots(level + 2)
+        fig, axs = plt.subplots(level + 3)
     else:
-        fig, axs = plt.subplots(2)
-    axs[0].plot(np.arange(len(subcs[subc_seq_num])), subcs[subc_seq_num])
+        fig, axs = plt.subplots(3)
+    axs[0].plot(np.arange(len(subcs[subc_seq_index])), subcs[subc_seq_index])
     axs[0].set_xlabel('index', fontsize=20)
     axs[0].set_ylabel('value', fontsize=20)
     axs[0].set_title('origin data', fontsize=22)
 
     i = 1
+    coeffs_backup = coeffs
     if result_only:
         coeffs = [coeffs[0]]
     for e in reversed(coeffs):
         axs[i].plot(np.arange(len(e)), e)
         axs[i].set_xlabel('index', fontsize=20)
-        axs[i].set_ylabel('value',fontsize=20)
-        if i <= len(coeffs)-1:
+        axs[i].set_ylabel('value', fontsize=20)
+        if i <= len(coeffs) - 1:
             axs[i].set_title('detail coefficients ' + str(i), fontsize=22)
         else:
             axs[i].set_title('approximation coefficients', fontsize=22)
         i += 1
+    # Inverse DWT
+    # coeffs_backup[-1] = np.zeros_like(coeffs[-1])
+    # coeffs_backup[-2] = np.zeros_like(coeffs[-2])
+    # coeffs_backup[-3] = np.zeros_like(coeffs[-3])
+    # idwt_amp = pywt.waverec(coeffs_backup, base)
+    # idwt_amp = pywt.upcoef('a', coeffs[0], base)
+    # axs[-1].plot(np.arange(len(idwt_amp)), idwt_amp)
     plt.show()
+    return subcs[subc_seq_index], coeffs[0]
 
 
 def main_backup():
@@ -196,6 +222,22 @@ def main_backup():
         #         axs[i*2+1].set_title(sys.argv[i+1][27:])
         # plt.show()
         plot_spec_subc(filterd_csi_list[i], 0, 1000, 45, 57, 118, 98)
+
+
+def plot_line(filename):
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+        fig, axs = plt.subplots(2)
+        i = 0
+        for line in lines:
+            amp = line.split()
+            np_amp = np.empty(len(amp))
+            for j in range(0, len(amp)):
+                np_amp[j] = float(amp[j])
+            x = np.arange(len(amp))
+            axs[i].plot(x, np_amp)
+            i += 1
+        plt.show()
 
 
 def plot_amp():
@@ -291,7 +333,7 @@ def plot_var():
 def plot_result():
     plt.style.use('_mpl-gallery')
     fig, ax = plt.subplots()
-    data = [97, 96, 91, 85, 65]
+    data = [97, 96, 89, 78, 62]
     labels = ['idle', 'walk', 'sit', 'wave', 'run']
 
     ax.bar(range(len(data)), data, tick_label=labels)
@@ -369,18 +411,39 @@ if __name__ == '__main__':
                         action='store_true',
                         dest='result_only'
                         )
+    parser.add_argument('--of',
+                        help='Output filename',
+                        type=str,
+                        dest='of'
+                        )
+    parser.add_argument('--plotline',
+                        action='store_true',
+                        dest='plotline'
+                        )
 
     args = parser.parse_args()
     if args.plot_distance:
         plot_subc_distance(args.filename)
         exit(0)
     if args.plot_spec_subc:
-        plot_spec_subc(args.filename, args.start_index, args.stop_index, args.raw, args.hampel_only, *args.subc_index)
+        plot_spec_subc(args.filename, args.start_index, args.stop_index, args.raw, args.hampel_only, 118)
         exit(0)
     if args.dwt:
-        discrete_wavelet_transform(args.filename, gaussian_sigma=args.gaussian_sigma, result_only=args.result_only)
+        ori_data, dwt_data = discrete_wavelet_transform(args.filename, gaussian_sigma=args.gaussian_sigma,
+                                                        result_only=args.result_only)
+        if args.of != None:
+            with open(args.of, 'w') as f:
+                for amp in ori_data:
+                    f.write(str(amp))
+                    f.write(' ')
+                f.write('\n')
+                for amp in dwt_data:
+                    f.write(str(amp))
+                    f.write(' ')
+                f.write('\n')
         exit(0)
     if args.result:
         plot_result()
         exit(0)
-
+    if args.plotline:
+        plot_line(args.filename)
