@@ -227,7 +227,7 @@ def get_result(test_file, *args):
         exit(1)
     arg_cnt = 0
     label_num = len(args)
-    label_dis_list = [[] for i in range(16)]
+    label_dis_list = [[] for i in range(dim_num)]
     while arg_cnt < label_num:
         label = args[arg_cnt + 1]
         train_dir = args[arg_cnt]
@@ -244,11 +244,12 @@ def get_result(test_file, *args):
                 for v in dis_list[ft_idx*4 + subc_idx]:
                     label_dis_list[ft_idx * 4 + subc_idx].append(Distance(label, v))
 
-    k = 2
+    k = 3
     for dis in label_dis_list:
         dis.sort()
+
     label_cnt = {}
-    for dimension in label_dis_list[:dim_num]:
+    for dimension in label_dis_list:
         for dis in dimension[:k]:
             # print(dis.label)
             # print(dis)
@@ -267,12 +268,6 @@ def get_result(test_file, *args):
 
 
 def get_accuracy(*args):
-    if (len(args) < 2) or (len(args) % 2 != 0):
-        print(args)
-        print()
-        print('get_accuracy: Train folder and label error!')
-        exit(1)
-    # print(args)
     test_dir = args[0]
     test_label = args[1]
     test_file_list = [join(test_dir, f) for f in listdir(test_dir) if isfile(join(test_dir, f))]
@@ -291,3 +286,60 @@ def get_accuracy(*args):
 
 if __name__ == '__main__':
     get_accuracy(*sys.argv[1:])
+    # print(get_result(*sys.argv[1:]))
+    # if len(sys.argv) <= 1:
+    #     print('Usage: python myknn.py <test_data_folder> '
+    #           '<test_data_label> <train_data_folder> <train_data_label> [<train_data_folder> <train_data_label>]')
+    #     exit(1)
+    #
+    # test_label = sys.argv[2]
+    # distance_list = [[] for i in range(12)]
+    #
+    # # Read test data
+    # tst_action = Action(test_label)
+    # subc_amps, filtered_amps = read_and_filter(sys.argv[1])
+    # tst_action.actList.append(filtered_amps)
+    #
+    # # Read train datas
+    # train_data_list = []
+    # i = 2
+    # while i < len(sys.argv):
+    #     train_folder = sys.argv[i]
+    #     train_label = sys.argv[i + 1]
+    #     i += 2
+    #     act = read_dir(train_folder, train_label)
+    #     train_data_list.append(act)
+    # del i
+    #
+    #
+    #
+    # # Calculate distances
+    # # distanceList:[[MAX_SUBC1-4][MAD_SUBC1-4][VAR_SUBC1-4]]
+    # calc_distance(tst_action, train_data_list, max, 0, distance_list)
+    # calc_distance(tst_action, train_data_list, median_abs_deviation, 1, distance_list)
+    # calc_distance(tst_action, train_data_list, variance, 2, distance_list)
+    #
+    # for dis in distance_list:
+    #     dis.sort()
+    # label_cnt = {}
+    # for dimension in distance_list:
+    #     for dis in dimension[:3]:
+    #         # print(dis.label)
+    #         if dis.label not in label_cnt:
+    #             label_cnt[dis.label] = 1
+    #         else:
+    #             label_cnt[dis.label] += 1
+    # max_cnt = 0
+    # max_label = ''
+    # for label in label_cnt:
+    #     if label_cnt[label] > max_cnt:
+    #         max_cnt = label_cnt[label]
+    #         max_label = label
+    # print(max_label)
+    # # if max_label == test_label:
+    # #     correct_test_num += 1
+    # # else:
+    # #     print(max_label)
+    # # print(correct_test_num)
+    # # print(total_test_num)
+    # # print(correct_test_num / total_test_num)

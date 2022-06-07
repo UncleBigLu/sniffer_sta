@@ -7,3 +7,7 @@ python_scripts/venv
 python_scripts/plotTest.py
 __pycache__
 experiment_record
+*.txt
+*.csv
+*.png
+

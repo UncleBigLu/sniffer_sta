@@ -11,7 +11,9 @@ import numpy as np
 import pywt
 from math import ceil
 from scipy.stats import median_abs_deviation
+from scipy.spatial.distance import euclidean
 import argparse
+from fastdtw import fastdtw
 
 
 def plot_all_subc(subcs, start_subc=0, end_subc=64):
@@ -103,7 +105,6 @@ def plot_subc_sensitivity(weight_list, start_subc=2, end_subc=62):
 def plot_spec_subc(filename, start_datapoint, end_datapoint, raw_data, hampel_only, *subc_seq):
     if raw_data:
         amp = read_csv_all_data(filename)
-        print('raw')
     else:
         raw_amp, filtered_amp = read_and_filter(filename)
         if hampel_only:
@@ -114,6 +115,8 @@ def plot_spec_subc(filename, start_datapoint, end_datapoint, raw_data, hampel_on
     if subc_num == 0:
         print("No subcarrier number given")
         return
+
+
 
     # plt.style.use('_mpl-gallery')
     fig, ax = plt.subplots(subc_num, figsize=(6.93, 5.19))
@@ -131,9 +134,22 @@ def plot_spec_subc(filename, start_datapoint, end_datapoint, raw_data, hampel_on
             ax[i].set_title('subcarrier' + str(subc_seq[i]))
             ax[i].set_xlabel('subcarrier interval', fontsize=22)
             ax[i].set_ylabel('subcarrier distance', fontsize=22)
-    ax.legend()
+    # ax.legend()
     plt.show()
     fig.savefig('test.png', format='png')
+
+    s = ''
+    if subc_num == 1:
+        for v in amp[int(subc_seq[0]) - 4][int(start_datapoint):int(end_datapoint)]:
+            s += str(v)
+            s += ' '
+    else:
+        for i in range(0, subc_num):
+            for v in amp[int(subc_seq[i]) - 4][int(start_datapoint):int(end_datapoint)]:
+                s += str(v)
+                s += ' '
+            s += '\n'
+    print(s)
     return amp[int(subc_seq[0]) - 4][int(start_datapoint):int(end_datapoint)]
 
 
@@ -227,7 +243,7 @@ def main_backup():
 def plot_line(filename):
     with open(filename, 'r') as f:
         lines = f.readlines()
-        fig, axs = plt.subplots(2)
+        fig, axs = plt.subplots()
         i = 0
         for line in lines:
             amp = line.split()
@@ -235,7 +251,7 @@ def plot_line(filename):
             for j in range(0, len(amp)):
                 np_amp[j] = float(amp[j])
             x = np.arange(len(amp))
-            axs[i].plot(x, np_amp)
+            axs.plot(x, np_amp)
             i += 1
         plt.show()
 
@@ -346,12 +362,38 @@ def plot_result():
         ax.text(x, y + 1, str(y) + '%', ha='center', fontsize=18)
     plt.show()
 
+def plot_dtw(f1, f2, subc_idx=3):
+    with open(f1, 'r') as f:
+        for i, line in enumerate(f):
+            if i == 3 + subc_idx:
+                a1 = np.array([float(v) for v in line.split()])
+                print(line)
+    with open(f2, 'r') as f:
+        for i, line in enumerate(f):
+            if i == 3 + subc_idx:
+                a2 = np.array([float(v) for v in line.split()])
+                print(line)
+    fig, ax = plt.subplots()
+    ax.plot(np.arange(len(a1)), a1)
+    ax.plot(np.arange(len(a2)), a2)
+    distance, path = fastdtw(a1, a2, dist=euclidean)
+    print(path)
+    for pair in path:
+        ax.plot(pair, (a1[pair[0]], a2[pair[1]]), 'k--')
+    plt.show()
+
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--filename',
                         type=str,
                         dest='filename'
+                        )
+    parser.add_argument('--file2',
+                        type=str,
+                        dest='file2'
                         )
     parser.add_argument('-d', '--distance',
                         help='Plot file\'s subcarrier distance',
@@ -420,13 +462,17 @@ if __name__ == '__main__':
                         action='store_true',
                         dest='plotline'
                         )
+    parser.add_argument('--plotdtw',
+                        action='store_true',
+                        dest='plotdtw'
+                        )
 
     args = parser.parse_args()
     if args.plot_distance:
         plot_subc_distance(args.filename)
         exit(0)
     if args.plot_spec_subc:
-        plot_spec_subc(args.filename, args.start_index, args.stop_index, args.raw, args.hampel_only, 118)
+        plot_spec_subc(args.filename, args.start_index, args.stop_index, args.raw, args.hampel_only, 115, 116, 117, 118)
         exit(0)
     if args.dwt:
         ori_data, dwt_data = discrete_wavelet_transform(args.filename, gaussian_sigma=args.gaussian_sigma,
@@ -447,3 +493,6 @@ if __name__ == '__main__':
         exit(0)
     if args.plotline:
         plot_line(args.filename)
+    if args.plotdtw:
+        plot_dtw(args.filename, args.file2)
+

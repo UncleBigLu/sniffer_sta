@@ -208,6 +208,24 @@ def check_processed_data(fi):
         plt.show()
 
 
+def read_feature(fi, fo, feature=2, subc_idx=3):
+    f_list = [join(fi, f) for f in listdir(fi) if isfile(join(fi, f))]
+    try:
+        with open(fo, 'r') as f:
+            l = f.readline()
+    except:
+        l = ''
+
+    for f_name in f_list:
+        with open(f_name, 'r') as f:
+            for i, line in enumerate(f):
+                if i == feature:
+                    l += line.split()[subc_idx]
+                    l += ' '
+    with open(fo, 'w') as f:
+        f.write(l)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--scale-point',
@@ -247,6 +265,11 @@ if __name__ == '__main__':
                         action='store_true',
                         dest='check'
                         )
+    parser.add_argument('--wf',
+                        help='Write feature to file',
+                        action='store_true',
+                        dest='wf'
+                        )
 
     args = parser.parse_args()
 
@@ -258,5 +281,7 @@ if __name__ == '__main__':
         process_data(args.filename, args.of)
     elif args.check:
         check_processed_data(args.filename)
+    elif args.wf:
+        read_feature(args.filename, args.of)
     # filename = str(sys.argv[1])
     # cnt_data_len(filename)
