@@ -472,7 +472,7 @@ if __name__ == '__main__':
         plot_subc_distance(args.filename)
         exit(0)
     if args.plot_spec_subc:
-        plot_spec_subc(args.filename, args.start_index, args.stop_index, args.raw, args.hampel_only, 115, 116, 117, 118)
+        plot_spec_subc(args.filename, args.start_index, args.stop_index, args.raw, args.hampel_only, 191)
         exit(0)
     if args.dwt:
         ori_data, dwt_data = discrete_wavelet_transform(args.filename, gaussian_sigma=args.gaussian_sigma,

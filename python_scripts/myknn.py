@@ -279,6 +279,7 @@ def get_accuracy(*args):
             crt_test_num += 1
         else:
             print(label)
+            print(test_file)
     print(tot_test_num)
     print(crt_test_num)
     print(crt_test_num / tot_test_num)

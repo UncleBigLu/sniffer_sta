@@ -17,6 +17,8 @@ from os import listdir
 from os.path import isfile, join
 import random
 import argparse
+from sklearn.decomposition import PCA
+from scipy.ndimage import median_filter
 
 
 def hampel_filter(subc, window_size=25):
@@ -117,12 +119,16 @@ def read_csv(filename):
     return subc_amplitude, subc_phase
 
 
-def read_and_filter(filename, gaussian_sigma=8):
+def read_and_filter(filename, gaussian_sigma=8, is_median_filter=False):
     subc_amplitude = read_csv_all_data(filename)
     csi_num = len(subc_amplitude[0])
     # remove_outlier(subc_amplitude)
-    for subc_index in range(0, 376):
-        hampel_filter(subc_amplitude[subc_index])
+    if is_median_filter:
+        for subc_index in range(0, 376):
+            subc_amplitude[subc_index] = median_filter(subc_amplitude[subc_index], size=25)
+    else:
+        for subc_index in range(0, 376):
+            hampel_filter(subc_amplitude[subc_index])
 
     # Apply gaussian filter
     filterd_amplitude = np.empty((376, csi_num))
@@ -153,8 +159,8 @@ def scale_point(dir_name, start_seq, scale_base=0):
                 out_str = 'csi_data: '
 
 
-def process_data(fi, fo):
-    raw_amp, flt_amp = read_and_filter(fi)
+def process_data(fi, fo, is_median_filter):
+    raw_amp, flt_amp = read_and_filter(fi, is_median_filter=is_median_filter)
     """
     Output file structure:
     max45 57 98 118
@@ -226,6 +232,89 @@ def read_feature(fi, fo, feature=2, subc_idx=3):
         f.write(l)
 
 
+def mypca(fi):
+    ori_amps, filtered_amps = read_and_filter(fi)
+    print(filtered_amps.shape)
+    pca_model = PCA(n_components=4)
+    res = pca_model.fit_transform(filtered_amps)
+    print(res.shape)
+
+
+def write_amp(fi, fo):
+    ori_amps, filtered_amps = read_and_filter(fi)
+    with open(fo, 'w') as f:
+        for subc_index in range(filtered_amps.shape[0]):
+            amp = filtered_amps[subc_index]
+            for v in amp:
+                f.write(str(v))
+                f.write(' ')
+            f.write('\n')
+
+
+def up_scale(fi, fo):
+    with open(fi, 'r') as f:
+        lines = f.readlines()
+        lines_out = []
+        for i in range(0, 3):
+            lines[i].strip('\n')
+            lines_out.append(lines[i])
+        for i in range(3, 7):
+            s = ''
+            data = lines[i].split()
+            cnt = 0
+            for d in data:
+                s += d
+                s += ' '
+                cnt += 1
+                if cnt == 2:
+                    cnt = 0
+                    s += d
+                    s += ' '
+            lines_out.append(s)
+    with open(fo, 'w') as f:
+        cnt = 0
+        for line in lines_out:
+            f.write(line)
+            cnt += 1
+            if cnt > 3:
+                f.write('\n')
+
+
+def up_scale2(fi, fo):
+    with open(fi, 'r') as f:
+        lines = f.readlines()
+        lines_out = []
+        for i in range(0, 3):
+            lines[i].strip('\n')
+            lines_out.append(lines[i])
+        for i in range(3, 7):
+            s = ''
+            data = lines[i].split()
+            cnt = 0
+            for i in range(len(data)):
+                s += data[i]
+                s += ' '
+                if i != len(data) - 1:
+                    s += str((float(data[i]) + float(data[i + 1])) / 2)
+                    s += ' '
+            for d in data:
+                s += d
+                s += ' '
+                cnt += 1
+                if cnt == 1:
+                    cnt = 0
+                    s += d
+                    s += ' '
+            lines_out.append(s)
+    with open(fo, 'w') as f:
+        cnt = 0
+        for line in lines_out:
+            f.write(line)
+            cnt += 1
+            if cnt > 3:
+                f.write('\n')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--scale-point',
@@ -270,6 +359,24 @@ if __name__ == '__main__':
                         action='store_true',
                         dest='wf'
                         )
+    parser.add_argument('--pca',
+                        action='store_true',
+                        dest='pca'
+                        )
+    parser.add_argument('--write-amp',
+                        action='store_true',
+                        dest='write_amp'
+                        )
+    parser.add_argument('--up-scale',
+                        action='store_true',
+                        dest='up_scale'
+                        )
+    parser.add_argument('--median-filter',
+                        help='Use median filter instead of hampel filter',
+                        action='store_true',
+                        dest='median_filter',
+                        default='False'
+                        )
 
     args = parser.parse_args()
 
@@ -278,10 +385,17 @@ if __name__ == '__main__':
         folder_name = args.filename
         scale_point(folder_name, args.seq_num, float(args.opt_arg))
     elif args.process_data:
-        process_data(args.filename, args.of)
+        process_data(args.filename, args.of, args.median_filter)
     elif args.check:
         check_processed_data(args.filename)
     elif args.wf:
         read_feature(args.filename, args.of)
+    elif args.pca:
+        mypca(args.filename)
+    elif args.write_amp:
+        write_amp(args.filename, args.of)
+    elif args.up_scale:
+        up_scale(args.filename, args.of)
+
     # filename = str(sys.argv[1])
     # cnt_data_len(filename)
