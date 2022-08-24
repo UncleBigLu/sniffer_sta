@@ -39,6 +39,19 @@ def hampel_filter(subc, window_size=25):
                 subc[k] = mdn
 
 
+def my_median_filter(subc, window_size=25):
+    half_w_size = int(window_size/2)
+    cnt = half_w_size
+    rst = np.empty(len(subc))
+    for i in range(cnt):
+        rst[i] = subc[i]
+    while cnt < len(subc) - half_w_size:
+        rst[cnt] = np.median(subc[cnt-half_w_size:cnt+half_w_size + 1])
+        cnt += 1
+    rst[cnt:] = subc[cnt:]
+    return rst
+
+
 def cnt_data_len(filename):
     with open(filename, 'r') as f:
         lines = f.readlines()
@@ -125,7 +138,7 @@ def read_and_filter(filename, gaussian_sigma=8, is_median_filter=False):
     # remove_outlier(subc_amplitude)
     if is_median_filter:
         for subc_index in range(0, 376):
-            subc_amplitude[subc_index] = median_filter(subc_amplitude[subc_index], size=25)
+            subc_amplitude[subc_index] = my_median_filter(subc_amplitude[subc_index])
     else:
         for subc_index in range(0, 376):
             hampel_filter(subc_amplitude[subc_index])
