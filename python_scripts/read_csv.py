@@ -19,6 +19,7 @@ import random
 import argparse
 from sklearn.decomposition import PCA
 from scipy.ndimage import median_filter
+import time
 
 
 def hampel_filter(subc, window_size=25):
@@ -40,13 +41,13 @@ def hampel_filter(subc, window_size=25):
 
 
 def my_median_filter(subc, window_size=25):
-    half_w_size = int(window_size/2)
+    half_w_size = int(window_size / 2)
     cnt = half_w_size
     rst = np.empty(len(subc))
     for i in range(cnt):
         rst[i] = subc[i]
     while cnt < len(subc) - half_w_size:
-        rst[cnt] = np.median(subc[cnt-half_w_size:cnt+half_w_size + 1])
+        rst[cnt] = np.median(subc[cnt - half_w_size:cnt + half_w_size + 1])
         cnt += 1
     rst[cnt:] = subc[cnt:]
     return rst
@@ -148,6 +149,25 @@ def read_and_filter(filename, gaussian_sigma=8, is_median_filter=False):
     for i in range(0, 376):
         filterd_amplitude[i] = gaussian_filter(subc_amplitude[i], sigma=gaussian_sigma)
     return subc_amplitude, filterd_amplitude
+
+
+def calc_filter_time(filename):
+    subc_amplitude = read_csv_all_data(filename)
+    csi_num = len(subc_amplitude[0])
+
+    md_st = time.process_time()
+    for subc_index in range(0, 376):
+        my_median_filter(subc_amplitude[subc_index])
+    hp_st = time.process_time()
+    for subc_index in range(0, 376):
+        hampel_filter(subc_amplitude[subc_index])
+    gs_st = time.process_time()
+    for i in range(0, 376):
+        gaussian_filter(subc_amplitude[i], sigma=8)
+    et = time.process_time()
+    print('Median filter CPU time: ', hp_st - md_st, ' seconds')
+    print('Hample filter CPU time: ', gs_st - hp_st, ' seconds')
+    print('Gaussian filter CPU time: ', et - gs_st, ' seconds')
 
 
 def scale_point(dir_name, start_seq, scale_base=0):
@@ -390,6 +410,11 @@ if __name__ == '__main__':
                         dest='median_filter',
                         default='False'
                         )
+    parser.add_argument('--calc-time',
+                        help='Calculate filter execute time',
+                        action='store_true',
+                        dest='calc_time'
+                        )
 
     args = parser.parse_args()
 
@@ -409,6 +434,8 @@ if __name__ == '__main__':
         write_amp(args.filename, args.of)
     elif args.up_scale:
         up_scale(args.filename, args.of)
+    elif args.calc_time:
+        calc_filter_time(args.filename)
 
     # filename = str(sys.argv[1])
     # cnt_data_len(filename)
