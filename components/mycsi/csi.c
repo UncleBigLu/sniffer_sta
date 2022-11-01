@@ -124,6 +124,8 @@ void serial_print_csi_task() {
             printf("20MHz\n");
             cbw = 0;
         }
+        printf("MCS: ");
+        printf("%u\n",data->rx_ctrl.mcs);
 
 //        // Call get csi function from function pointer array
 //        // Get csi from seconde subcarrier of HTLTF

@@ -14,9 +14,9 @@ void app_main(void)
 
     csi_init();
 //    xTaskCreate(serial_print_csi_task, "serial_print_csi", 4096, NULL, 1, NULL);
-    xTaskCreate(serial_raw_csi_data_task, "serial_raw_csi_data_print", 4096, NULL, 1, NULL);
+    xTaskCreate(serial_print_csi_task, "print_csi_info", 4096, NULL, 1, NULL);
     init_ping();
     esp_ping_start(ping_session);
 
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
 }
